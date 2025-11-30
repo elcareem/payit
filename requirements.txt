@@ -7,3 +7,6 @@ pydantic
 sqlalchemy
 bcrypt
 pydantic[email]
+python-jose
+aiofiles
+sqladmin

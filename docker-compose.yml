@@ -12,8 +12,13 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_DATABASE=${DB_DATABASE}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+
     volumes:
       - ./app:/app/app
+      - ./app/static/uploads:/app/static/uploads
     depends_on:
       payit_db:
         condition: service_healthy
@@ -46,6 +51,19 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: payit_phpmyadmin
+    depends_on:
+      - payit_db
+    environment:
+      PMA_HOST: ${DB_HOST}       
+      PMA_PORT: ${DB_PORT}
+      PMA_AUTH_TYPE: cookie
+    ports:
+      - "8080:80"
+    restart: unless-stopped
     
 volumes:
   payit_db_data:

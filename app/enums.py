@@ -1,18 +1,22 @@
-from sqlalchemy import Enum
-from enum import Enum as _Enum
+from enum import Enum
 
-class GenderBase(str, Enum):
+class Gender(str, Enum):
     M = 'M'
     F = 'F'
 
-class CategoryBase(str, Enum):
-    buyer = 'buyer'
-    farmer = 'farmer'
+class ProductCategory(str, Enum):
+    grain = 'grain'
+    tuber = 'tuber'
+    vegetable = 'vegetable'
+    livestock = "livestock"
+    diary = "diary"
+    other = "other"
 
-class Gender(str, _Enum):
-    M = 'M'
-    F = 'F'
+class OrderStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
 
-class Category(str, _Enum):
-    buyer = 'buyer'
-    farmer = 'farmer'
+class PaymentType(str, Enum):
+    card = "card"
+    transfer = "transfer"
+    
