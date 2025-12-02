@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .database import engine
 from .models.base import Base
-from .models import product_category, buyer
+from .models import product_category, product_image
 from fastapi.staticfiles import StaticFiles
 from app.admin import init_admin
 

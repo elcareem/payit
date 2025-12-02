@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Request, HTTPException, status, File, Up
 from app.models.user import User
 from app.models.farmer import Farmer
 from app.models.product import Product
+from app.models.product_image import ProductImage
 from app.models.product_category import ProductCategory
 from ..enums import ProductCategory as ProductCategoryEnum
-from ..schemas.product_schema import ProductCreateRequest, ProductUpdateRequest, Product as ProductResponse
+from ..schemas.product_schema import ProductCreateRequest, ProductUpdateRequest, ProductDetail, Product as ProductResponse
 from app.database import SessionDep
 from ..middleware.auth import AuthMiddleware
 from datetime import datetime
@@ -69,7 +70,7 @@ async def upload_product(
                 description: Optional[str] = Form(...),
                 unit_price: int = Form(...),
                 quantity: int = Form(...),
-                image: UploadFile = File(None),
+                images: List[UploadFile] = File(None),
                 current_user = Depends(AuthMiddleware),
             ):
 
@@ -89,38 +90,44 @@ async def upload_product(
             raiseError(e, request)
         except Exception as e:
             raiseError(e, request)
-
-
-    allowed_ext = ["png", "jpeg", "jp"]
-    file_ext = image.filename.split(".")[-1].lower()
-
-    if not file_ext in  allowed_ext:
-        raise_error("Invalid file extension", status.HTTP_400_BAD_REQUEST)
-
-    max_image_size = 1024 * 1024
-    content = await image.read()
-    if len(content) > max_image_size:
-        raise_error("File too large. Maximum size allowed is 1 MB.", status.HTTP_400_BAD_REQUEST)
-
-    await image.seek(0)
-
-    try:
     
-        file_name = f"{uuid4()}.{file_ext}"
+    filenames = []
 
-        file_path = f"{UPLOAD_DIR}/{file_name}"
-        print(file_path)
+    valid_images = [img for img in images if img.filename]
 
-        async with aiofiles.open(file_path, "wb") as output_file:
+    if valid_images:
+        for image in images:
+            
+            allowed_ext = ["png", "jpeg", "jp"]
+            file_ext = image.filename.split(".")[-1].lower()
+
+            if not file_ext in  allowed_ext:
+                raise_error("Invalid file extension", status.HTTP_400_BAD_REQUEST)
+
+            max_image_size = 1024 * 1024
             content = await image.read()
-            await output_file.write(content)
+            if len(content) > max_image_size:
+                raise_error("File too large. Maximum size allowed is 1 MB.", status.HTTP_400_BAD_REQUEST)
 
-    except:
-        raise_error("Internal Server Error", status.HTTP_500_INTERNAL_SERVER_ERROR)
+            await image.seek(0)
+
+            try:
+            
+                file_name = f"{uuid4()}.{file_ext}"
+
+                file_path = f"{UPLOAD_DIR}/{file_name}"
+                filenames.append(file_name)
+
+                async with aiofiles.open(file_path, "wb") as output_file:
+                    content = await image.read()
+                    await output_file.write(content)
+
+            except:
+                raise_error("Internal Server Error", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     try:
-        image_url = f"static/uploads/{file_name}"
-
+        image_urls = [f"static/uploads/{filename}" for filename in filenames] if filenames else []
+        
         new_product = Product(
             farmer_id = farmer.id,
             category_id = category.id,
@@ -128,9 +135,17 @@ async def upload_product(
             description= description,
             unit_price = unit_price,
             quantity = quantity,
-            image_url = image_url
         )
         db.add(new_product)
+        db.commit()
+
+        if image_urls:
+            for image_url in image_urls:
+                new_product_image = ProductImage(
+                    product_id = new_product.id,
+                    image_url = image_url
+                )
+                db.add(new_product_image)
         db.commit()
         db.refresh(new_product)
         return {
@@ -154,14 +169,30 @@ def get_all_products(db: SessionDep, request: Request):
 
     return products
 
-@router.get("/{product_id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
+@router.get("/{product_id}", status_code=status.HTTP_200_OK, response_model=ProductResponse | ProductDetail)
 def get_product(product_id: int, db: SessionDep, request: Request):
     product = db.query(Product).filter(Product.id == product_id).first()
+    product_images = product.images
 
     if not product:
         raiseError("Product doesn't exist", request)
-    return product
+    
+    image_urls = [image.image_url for image in product_images] if product_images else []
+    
+    print(image_urls)
 
+    if not product_images:
+        return product
+    
+    product = ProductResponse.model_validate(product).model_dump()
+    product_ = ProductDetail(
+        **product,
+        image_urls = image_urls,
+    )
+
+    return product_
+    
+    
 @router.get("/me/", status_code=status.HTTP_200_OK, response_model=List[ProductResponse])
 def get_user_products(db: SessionDep, current_user = Depends(AuthMiddleware)):
 

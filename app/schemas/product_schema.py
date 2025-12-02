@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from decimal import Decimal
+from typing import List
 
 class Product(BaseModel):
     id: int
@@ -8,7 +9,21 @@ class Product(BaseModel):
     name: str
     unit_price: float
     quantity: int
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class ProductDetail(BaseModel):
+    id: int
+    farmer_id: int
+    category_id: int
+    name: str
+    unit_price: float
+    quantity: int
+    image_urls: List[str]
     
+
 
 class ProductCreateRequest(BaseModel):
     category_id: int
