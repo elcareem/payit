@@ -22,8 +22,6 @@ class ProductDetail(BaseModel):
     unit_price: float
     quantity: int
     image_urls: List[str]
-    
-
 
 class ProductCreateRequest(BaseModel):
     category_id: int

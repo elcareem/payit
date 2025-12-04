@@ -9,13 +9,13 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(30), nullable=False)
-    password = Column(String(255), nullable=False)
-    phone = Column(String(11), unique=True, nullable = False) 
+    password = Column(String(255), nullable=True)
+    phone = Column(String(11), unique=True, nullable = True) 
     email = Column(String(255), unique=True, index=True, nullable=False)
-    gender = Column(Enum(Gender), nullable=False)
-    location = Column(String(50), nullable=False)
+    gender = Column(Enum(Gender), nullable=True) 
+    location = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    farmer = relationship("Farmer", back_populates="user", uselist=False)
+    farmer = relationship("Farmer", back_populates="user", uselist=False)   
     buyer = relationship("Buyer", back_populates="user", uselist=False)

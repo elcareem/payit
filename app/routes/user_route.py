@@ -55,7 +55,7 @@ def get_all_users(db: SessionDep, request: Request):
 
     return users
 
-@router.get("/me", status_code=status.HTTP_200_OK, response_model = UserResponse)
+@router.get("/me", status_code=status.HTTP_200_OK)
 def get_current_user(current_user = Depends(AuthMiddleware)):
     return current_user
 

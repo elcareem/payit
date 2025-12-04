@@ -10,3 +10,7 @@ pydantic[email]
 python-jose
 aiofiles
 sqladmin
+
+authlib
+httpx
+itsdangerous
